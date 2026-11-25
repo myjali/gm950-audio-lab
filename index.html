@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Audio Analyzer for Repeaters V1.1</title>
+<title>Audio Analyzer for Repeaters V1.1 by 9M6JLO</title>
 <style>
 :root{--bg:#07111f;--panel:#101e30;--text:#e6f0fb;--muted:#9bb0c7;--green:#46d9b0;--cyan:#51c7f4;--yellow:#f4c15a;--red:#f26c7a}
 *{box-sizing:border-box}body{margin:auto;padding:12px;max-width:960px;background:var(--bg);color:var(--text);font-family:system-ui,Arial,sans-serif}h1{font-size:1.35rem;margin:0}small,.hint{color:var(--muted)}.panel{background:var(--panel);border:1px solid #223750;border-radius:15px;padding:13px;margin:12px 0}.row{display:flex;gap:9px;align-items:center;flex-wrap:wrap}button,select{padding:11px 13px;border-radius:10px;font-size:15px}button{border:0;font-weight:700;background:var(--green);color:#062019}button.secondary,select{background:#20344a;color:white;border:1px solid #344c66}.status{color:var(--yellow);margin:10px 0}.title{font-weight:700;margin-bottom:9px}canvas{display:block;width:100%;background:#050d17;border:1px solid #263b53;border-radius:9px}.hint{font-size:.82rem;line-height:1.45}.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.metric{background:#15263a;padding:10px;border-radius:10px}.metric label{font-size:.73rem;color:var(--muted)}.metric strong{display:block;font-size:1.05rem;margin-top:5px}.bandgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:7px}.band{background:#15263a;padding:9px;border-radius:10px}.bar{height:8px;background:#26394d;border-radius:9px;margin-top:7px;overflow:hidden}.fill{height:100%;width:0;background:var(--green)}.band small{display:block;font-size:.7rem}.bandval{font-size:.75rem;color:var(--muted);margin-top:5px}.footer{text-align:center;color:#8fa4ba;font-size:.7rem;padding:8px}
@@ -19,7 +19,7 @@
 <script>
 const $=id=>document.getElementById(id), spec=$('spectrum'), sc=spec.getContext('2d'), wf=$('waterfall'), wc=wf.getContext('2d'), pm=$('pitchmeter'), pc=pm.getContext('2d');
 let stream=null,ctx=null,analyser=null,src=null,raf=null,fd=null,td=null,active=false;
-function fit(c){let d=Math.min(devicePixelRatio||1,2),w=c.clientWidth,h=Number(c.getAttribute('height'));c.width=Math.max(1,w*d);c.height=Math.max(1,h*d);return d}
+function fit(c){let d=Math.min(devicePixelRatio||1,2),w=Math.max(1,c.clientWidth),h=Number(c.getAttribute('height'));let cw=Math.max(1,Math.round(w*d)),ch=Math.max(1,Math.round(h*d));if(c.width!==cw||c.height!==ch){c.width=cw;c.height=ch}return d}
 function dbY(v,h){v=Math.max(-100,Math.min(0,v));return h-(v+100)/100*h}
 function xFreq(f,w,log){let ny=ctx.sampleRate/2;if(log){let min=60;f=Math.max(min,f);return Math.log(f/min)/Math.log(ny/min)*w}return f/ny*w}
 function band(lo,hi){let sum=0,n=0;for(let i=0;i<fd.length;i++){let f=i*ctx.sampleRate/analyser.fftSize;if(f>=lo&&f<=hi){sum+=10**(fd[i]/10);n++}}return n?10*Math.log10(sum/n):-100}
