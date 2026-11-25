@@ -1,122 +1,31 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>GM950 Audio Lab V1.0</title>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Audio Analyzer for Repeaters V1.1</title>
 <style>
-:root{--bg:#07111f;--panel:#101e30;--panel2:#15263a;--text:#e6f0fb;--muted:#9bb0c7;--accent:#46d9b0;--cyan:#51c7f4;--warn:#f4c15a;--red:#f26c7a;--line:#223750}
-*{box-sizing:border-box}body{margin:0;background:linear-gradient(180deg,#07111f,#0a1727);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;padding:16px;max-width:980px;margin:auto}
-header{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:14px}h1{font-size:1.4rem;margin:0}header small{color:var(--muted)}.pill{border:1px solid var(--line);padding:6px 10px;border-radius:99px;color:var(--muted);font-size:.78rem}
-.panel{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:14px;margin:12px 0;box-shadow:0 8px 28px #0002}
-.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}.btn{background:var(--accent);color:#061820;border:0;border-radius:10px;padding:12px 15px;font-weight:750;font-size:.95rem}.btn.secondary{background:var(--panel2);color:var(--text);border:1px solid var(--line)}.btn.stop{background:var(--red);color:#260a12}.btn:disabled{opacity:.45}
-.metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:9px}.metric{background:var(--panel2);border-radius:12px;padding:12px}.metric .label{font-size:.75rem;color:var(--muted)}.metric .val{font-size:1.35rem;font-weight:800;margin-top:4px}
-canvas{width:100%;display:block;background:#06101c;border-radius:10px;border:1px solid #20344b}.charttitle{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;font-weight:700}.hint{color:var(--muted);font-size:.83rem;line-height:1.45}
-#status{color:var(--warn);font-size:.9rem}.bands{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.band{background:var(--panel2);padding:10px;border-radius:10px}.band strong{display:block;font-size:.82rem}.bar{height:8px;background:#24384d;border-radius:9px;margin-top:8px;overflow:hidden}.fill{height:100%;width:0;background:var(--accent);transition:width .12s}.bandval{font-size:.82rem;color:var(--muted);margin-top:5px}
-select{background:var(--panel2);color:var(--text);border:1px solid var(--line);padding:10px;border-radius:9px}
-.footer{font-size:.76rem;color:var(--muted);padding:8px}
-@media(max-width:500px){body{padding:10px}.metrics{grid-template-columns:repeat(3,1fr)}.metric{padding:9px}.metric .val{font-size:1.1rem}.bands{gap:5px}.band{padding:8px}}
-</style>
-</head>
-<body>
-<header>
-  <div><h1>📻 GM950 Audio Lab</h1><small>V1.0 · Live voice spectrum analyzer</small></div>
-  <div class="pill">MIC • LIVE</div>
-</header>
-<div class="panel">
-  <div class="row">
-    <button class="btn" id="start">▶ Start analyzer</button>
-    <button class="btn secondary" id="stop" disabled>■ Stop</button>
-    <label class="hint">Display:
-      <select id="scale"><option value="log">Log frequency</option><option value="linear">Linear</option></select>
-    </label>
-  </div>
-  <p id="status">Ready. Tap Start and allow microphone access.</p>
-  <div class="hint">For consistent tests: keep the same receiving radio, speaker volume, phone position and distance. This analyzer uses the phone microphone acoustically—no radio cable.</div>
-</div>
-<div class="panel">
-  <div class="charttitle"><span>LIVE SPECTRUM</span><span class="hint">Speech focus: 300 Hz – 3.4 kHz</span></div>
-  <canvas id="spectrum" height="270"></canvas>
-  <p class="hint">Green band = recommended speech analysis region. The shaded region outside it is context—not automatically bad audio. The limit is a guide, not a transmitter specification.</p>
-</div>
-<div class="panel">
-  <div class="charttitle"><span>SPEECH BAND ENERGY</span><span class="hint">Relative level</span></div>
-  <div class="bands">
-    <div class="band"><strong>LOW · 100–300 Hz</strong><div class="bar"><div class="fill" id="lowbar"></div></div><div class="bandval" id="lowval">—</div></div>
-    <div class="band"><strong>VOICE · 300–2,000 Hz</strong><div class="bar"><div class="fill" id="midbar"></div></div><div class="bandval" id="midval">—</div></div>
-    <div class="band"><strong>CLARITY · 2–3.4 kHz</strong><div class="bar"><div class="fill" id="highbar"></div></div><div class="bandval" id="highval">—</div></div>
-  </div>
-  <p class="hint">These are relative microphone-captured band energies, normalized for display. They are not calibrated dB SPL or RF deviation measurements.</p>
-</div>
-<div class="panel">
-  <div class="charttitle"><span>SPECTROGRAM / WATERFALL</span><span class="hint">Time →</span></div>
-  <canvas id="waterfall" height="220"></canvas>
-  <p class="hint">Shows how voice energy moves across frequencies over time. Useful for comparing tonal balance and noise.</p>
-</div>
-<div class="panel">
-  <div class="charttitle"><span>V1.0 ANALYSIS GUIDE</span></div>
-  <div class="hint">
-    <b>Best voice balance (visual guide):</b> concentrate on intelligible speech energy across roughly 300 Hz–3.4 kHz, with no strong bass rumble, excessive hiss/harshness, or obvious clipping. There is no universal “ideal” spectrum for every speaker or voice.<br><br>
-    <b>Limits:</b> the phone microphone, room acoustics, speaker, AGC, noise reduction and distance affect the displayed spectrum. Treat it as a repeatable comparison tool, not a calibrated audio test instrument.
-  </div>
-</div>
-<div class="footer">GM950 Audio Lab V1.0 · Single-file offline web tool after loading · Microphone permission is required.</div>
+:root{--bg:#07111f;--panel:#101e30;--text:#e6f0fb;--muted:#9bb0c7;--green:#46d9b0;--cyan:#51c7f4;--yellow:#f4c15a;--red:#f26c7a}
+*{box-sizing:border-box}body{margin:auto;padding:12px;max-width:960px;background:var(--bg);color:var(--text);font-family:system-ui,Arial,sans-serif}h1{font-size:1.35rem;margin:0}small,.hint{color:var(--muted)}.panel{background:var(--panel);border:1px solid #223750;border-radius:15px;padding:13px;margin:12px 0}.row{display:flex;gap:9px;align-items:center;flex-wrap:wrap}button,select{padding:11px 13px;border-radius:10px;font-size:15px}button{border:0;font-weight:700;background:var(--green);color:#062019}button.secondary,select{background:#20344a;color:white;border:1px solid #344c66}.status{color:var(--yellow);margin:10px 0}.title{font-weight:700;margin-bottom:9px}canvas{display:block;width:100%;background:#050d17;border:1px solid #263b53;border-radius:9px}.hint{font-size:.82rem;line-height:1.45}.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.metric{background:#15263a;padding:10px;border-radius:10px}.metric label{font-size:.73rem;color:var(--muted)}.metric strong{display:block;font-size:1.05rem;margin-top:5px}.bandgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:7px}.band{background:#15263a;padding:9px;border-radius:10px}.bar{height:8px;background:#26394d;border-radius:9px;margin-top:7px;overflow:hidden}.fill{height:100%;width:0;background:var(--green)}.band small{display:block;font-size:.7rem}.bandval{font-size:.75rem;color:var(--muted);margin-top:5px}.footer{text-align:center;color:#8fa4ba;font-size:.7rem;padding:8px}
+@media(max-width:480px){body{padding:8px}.panel{padding:10px}.bandgrid{grid-template-columns:repeat(2,1fr)}}
+</style></head><body>
+<header><h1>📻 Audio Analyzer for Repeaters</h1><small>V1.1 · Voice Pitch &amp; Spectrum Analysis</small></header>
+<div class="panel"><div class="row"><button id="start">▶ START ANALYZER</button><button id="stop" class="secondary" disabled>■ STOP</button><select id="scale"><option value="log">Logarithmic</option><option value="linear">Linear</option></select></div><div id="status" class="status">Ready — start and allow microphone access.</div><p class="hint">Listen to your radio through its speaker. Keep receiver volume, phone position and distance fixed when comparing tests.</p></div>
+<div class="panel"><div class="title">LIVE VOICE PITCH ESTIMATE</div><div class="grid"><div class="metric"><label>FUNDAMENTAL PITCH</label><strong id="pitch">— Hz</strong></div><div class="metric"><label>VOICE RANGE</label><strong id="range">Waiting</strong></div><div class="metric"><label>PITCH CONFIDENCE</label><strong id="confidence">—</strong></div></div><canvas id="pitchmeter" height="64" style="margin-top:10px"></canvas><p class="hint">Pitch estimate is best during voiced speech. Silence, noise, music, radio distortion and multiple speakers can make it unreliable. It is not a voice-identification tool.</p></div>
+<div class="panel"><div class="title">LIVE FREQUENCY SPECTRUM</div><canvas id="spectrum" height="300"></canvas><p class="hint"><span style="color:#46d9b0">Green shaded region:</span> 300 Hz–3.4 kHz speech reference band. It is not a strict cutoff or an automatic recommendation to remove frequencies.</p></div>
+<div class="panel"><div class="title">BAND ENERGY (RELATIVE)</div><div class="bandgrid"><div class="band"><b>BASS</b><small>80–250 Hz</small><div class="bar"><div id="bassbar" class="fill"></div></div><div id="bassval" class="bandval">—</div></div><div class="band"><b>BODY</b><small>250–800 Hz</small><div class="bar"><div id="bodybar" class="fill"></div></div><div id="bodyval" class="bandval">—</div></div><div class="band"><b>PRESENCE</b><small>800–3.4 kHz</small><div class="bar"><div id="presbar" class="fill"></div></div><div id="presval" class="bandval">—</div></div><div class="band"><b>BRIGHTNESS</b><small>3.4–8 kHz</small><div class="bar"><div id="brightbar" class="fill"></div></div><div id="brightval" class="bandval">—</div></div></div><p class="hint">These are relative energy readings from your phone microphone—not calibrated radio deviation, SPL, or a standalone judgment of voice quality.</p></div>
+<div class="panel"><div class="title">LIVE WATERFALL HISTORY</div><canvas id="waterfall" height="200"></canvas><p class="hint">Frequency energy history. Repeated voice patterns may become visible as bands.</p></div>
+<div class="panel"><div class="title">HOW TO INTERPRET</div><p class="hint"><b>Bass-heavy / boomy:</b> comparatively strong low-band energy. <b>Muffled:</b> weak presence region relative to body (context matters). <b>Bright / sharp:</b> stronger upper-band energy. <b>Harsh:</b> can involve excessive upper energy, distortion, clipping or noise. Use listening tests alongside the display; one spectrum is not enough to prescribe GM950 settings.</p></div>
+<div class="footer">Audio Analyzer for Repeaters V1.1 · Credit: 9M6JLO</div>
 <script>
-const spec=document.getElementById('spectrum'), sc=spec.getContext('2d');
-const water=document.getElementById('waterfall'), wc=water.getContext('2d');
-const startBtn=document.getElementById('start'),stopBtn=document.getElementById('stop'),status=document.getElementById('status');
-let stream=null,ctx=null,analyser=null,src=null,raf=null,buf=null,waterImg=null;
-const speechLo=300,speechHi=3400;
-function resizeCanvas(c){const r=c.getBoundingClientRect(),d=Math.min(devicePixelRatio||1,2);c.width=Math.floor(r.width*d);c.height=Math.floor((c.getAttribute('height')||240)*d);return d}
-let dpr=1;
-function dbToY(db,h){return h-(Math.max(-100,Math.min(0,db))+100)/100*h}
-function freqToX(f,sr,n,w,log){const max=sr/2;if(log){const min=60;return (Math.log(Math.max(f,min)/min)/Math.log(max/min))*w}return f/max*w}
-function drawSpectrum(){
- if(!analyser)return; analyser.getFloatFrequencyData(buf);
- const w=spec.width,h=spec.height; sc.clearRect(0,0,w,h);
- // background
- sc.fillStyle='#06101c';sc.fillRect(0,0,w,h);
- const sr=ctx.sampleRate;
- const x1=freqToX(speechLo,sr,buf.length,w,document.getElementById('scale').value==='log');
- const x2=freqToX(speechHi,sr,buf.length,w,document.getElementById('scale').value==='log');
- sc.fillStyle='rgba(70,217,176,.09)';sc.fillRect(x1,0,x2-x1,h);
- // grid horizontal
- sc.strokeStyle='#20344b';sc.lineWidth=1;sc.fillStyle='#91a8c0';sc.font=`${Math.max(10,12*dpr)}px sans-serif`;
- for(let db=-90;db<=0;db+=15){let y=dbToY(db,h);sc.beginPath();sc.moveTo(0,y);sc.lineTo(w,y);sc.stroke();sc.fillText(db+' dB',5,y-3)}
- // frequency marks
- const marks=[100,300,500,1000,2000,3400,5000,10000];
- for(const f of marks){if(f>sr/2)continue;let x=freqToX(f,sr,buf.length,w,document.getElementById('scale').value==='log');sc.strokeStyle='#263b53';sc.beginPath();sc.moveTo(x,0);sc.lineTo(x,h);sc.stroke();sc.fillStyle='#b1c4d8';sc.fillText(f>=1000?(f/1000)+'k':f+'Hz',Math.min(x+2,w-45),h-6)}
- // spectrum trace
- sc.beginPath();let started=false;
- for(let i=0;i<buf.length;i++){let f=i*sr/(2*buf.length);if(f<60)continue;let x=freqToX(f,sr,buf.length,w,document.getElementById('scale').value==='log');let y=dbToY(buf[i],h);if(!started){sc.moveTo(x,y);started=true}else sc.lineTo(x,y)}
- sc.strokeStyle='#51c7f4';sc.lineWidth=2*dpr;sc.stroke();
- // limit lines
- sc.setLineDash([6*dpr,4*dpr]);sc.strokeStyle='#46d9b0';sc.lineWidth=1.5*dpr;
- sc.beginPath();sc.moveTo(x1,0);sc.lineTo(x1,h);sc.moveTo(x2,0);sc.lineTo(x2,h);sc.stroke();sc.setLineDash([]);
- // bands rms-like average spectral energy (dB average)
- function bandEnergy(a,b){let sum=0,c=0;for(let i=0;i<buf.length;i++){let f=i*sr/(2*buf.length);if(f>=a&&f<b){let v=Math.pow(10,buf[i]/10);sum+=v;c++}}return c?10*Math.log10(sum/c):-100}
- const bands=[['low',100,300],['mid',300,2000],['high',2000,3400]];
- bands.forEach(([id,a,b])=>{let val=bandEnergy(a,b);let pct=Math.max(0,Math.min(100,(val+90)/90*100));document.getElementById(id+'bar').style.width=pct+'%';document.getElementById(id+'val').textContent=val.toFixed(1)+' dB relative'});
- // waterfall shift up one row and draw current spectrum bottom row
- const ww=water.width,wh=water.height;
- wc.drawImage(water,0,0,ww,wh-2*dpr,0,2*dpr,ww,wh-2*dpr);
- let row=wc.createImageData(ww,2*dpr);
- for(let px=0;px<ww;px++){let f= document.getElementById('scale').value==='log' ? 60*Math.pow(sr/2/60,px/ww) : (px/ww)*(sr/2);
- let index=Math.max(0,Math.min(buf.length-1,Math.round(f/(sr/2)*buf.length)));let v=Math.max(0,Math.min(1,(buf[index]+90)/75));
- let rr=Math.floor(v*255),gg=Math.floor(Math.max(0,v-.2)*255),bb=Math.floor((1-v)*150+35);
- for(let yy=0;yy<row.height;yy++){let p=(yy*row.width+px)*4;row.data[p]=rr;row.data[p+1]=gg;row.data[p+2]=bb;row.data[p+3]=255}
- }wc.putImageData(row,0,wh-2*dpr);
- raf=requestAnimationFrame(drawSpectrum);
-}
-startBtn.onclick=async()=>{try{
- stream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:false,noiseSuppression:false,autoGainControl:false}});
- ctx=new (window.AudioContext||window.webkitAudioContext)();await ctx.resume();
- analyser=ctx.createAnalyser();analyser.fftSize=4096;analyser.smoothingTimeConstant=.65;buf=new Float32Array(analyser.frequencyBinCount);
- src=ctx.createMediaStreamSource(stream);src.connect(analyser);
- dpr=resizeCanvas(spec);resizeCanvas(water);status.textContent='Listening. Keep the phone and receiving radio stationary.';startBtn.disabled=true;stopBtn.disabled=false;drawSpectrum();
- }catch(e){status.textContent='Microphone unavailable or permission denied: '+e.message}};
-stopBtn.onclick=()=>{if(raf)cancelAnimationFrame(raf);if(stream)stream.getTracks().forEach(t=>t.stop());if(ctx)ctx.close();stream=null;ctx=null;analyser=null;src=null;startBtn.disabled=false;stopBtn.disabled=true;status.textContent='Stopped.'};
-document.getElementById('scale').onchange=()=>{};
-</script>
-</body>
-</html>
+const $=id=>document.getElementById(id), spec=$('spectrum'), sc=spec.getContext('2d'), wf=$('waterfall'), wc=wf.getContext('2d'), pm=$('pitchmeter'), pc=pm.getContext('2d');
+let stream=null,ctx=null,analyser=null,src=null,raf=null,fd=null,td=null,active=false;
+function fit(c){let d=Math.min(devicePixelRatio||1,2),w=c.clientWidth,h=Number(c.getAttribute('height'));c.width=Math.max(1,w*d);c.height=Math.max(1,h*d);return d}
+function dbY(v,h){v=Math.max(-100,Math.min(0,v));return h-(v+100)/100*h}
+function xFreq(f,w,log){let ny=ctx.sampleRate/2;if(log){let min=60;f=Math.max(min,f);return Math.log(f/min)/Math.log(ny/min)*w}return f/ny*w}
+function band(lo,hi){let sum=0,n=0;for(let i=0;i<fd.length;i++){let f=i*ctx.sampleRate/analyser.fftSize;if(f>=lo&&f<=hi){sum+=10**(fd[i]/10);n++}}return n?10*Math.log10(sum/n):-100}
+function setBand(id,v){let p=Math.max(0,Math.min(100,(v+90)/90*100));$(id+'bar').style.width=p+'%';$(id+'val').textContent=v.toFixed(1)+' dB rel.'}
+function estimatePitch(){analyser.getFloatTimeDomainData(td);let N=td.length,lo=Math.floor(ctx.sampleRate/350),hi=Math.min(Math.floor(ctx.sampleRate/70),N-1),bestLag=0,best=-1;for(let lag=lo;lag<=hi;lag++){let s=0,a=0,b=0;for(let i=0;i<N-lag;i++){let x=td[i],y=td[i+lag];s+=x*y;a+=x*x;b+=y*y}let score=s/Math.sqrt((a*b)||1);if(score>best){best=score;bestLag=lag}}let hz=bestLag?ctx.sampleRate/bestLag:0;if(best<.35||hz<70||hz>350)hz=0;let cls=!hz?'No stable pitch':hz<110?'Low / bass':hz<150?'Medium-low':hz<210?'Medium':hz<270?'Medium-high':'High';$('pitch').textContent=hz?hz.toFixed(1)+' Hz':'— Hz';$('range').textContent=cls;$('confidence').textContent=hz?Math.round(Math.max(0,Math.min(100,best))*100)+'%':'—';let d=fit(pm),w=pm.width,h=pm.height;pc.fillStyle='#06101c';pc.fillRect(0,0,w,h);for(let i=0;i<24;i++){pc.fillStyle='#20344b';pc.fillRect(i*w/24+1,h*.4,w/24-2,h*.2)}if(hz){let pos=Math.max(0,Math.min(1,(hz-70)/(350-70)));pc.fillStyle='#51c7f4';pc.fillRect(pos*w-2,0,4,h);pc.fillStyle='#46d9b0';pc.fillRect(0,h*.4,pos*w,h*.2)}pc.fillStyle='#9bb0c7';pc.font=12*d+'px sans-serif';pc.fillText('70 Hz',2,h-5);pc.fillText('350 Hz',w-55,h-5)}
+function draw(){if(!active)return;analyser.getFloatFrequencyData(fd);estimatePitch();let d=fit(spec),w=spec.width,h=spec.height,log=$('scale').value==='log';sc.fillStyle='#050d17';sc.fillRect(0,0,w,h);let x1=xFreq(300,w,log),x2=xFreq(3400,w,log);sc.fillStyle='rgba(70,217,176,.10)';sc.fillRect(x1,0,x2-x1,h);sc.strokeStyle='#20344b';sc.fillStyle='#a4bad0';sc.font=12*d+'px sans-serif';for(let db=-90;db<=0;db+=15){let y=dbY(db,h);sc.beginPath();sc.moveTo(0,y);sc.lineTo(w,y);sc.stroke();sc.fillText(db+' dB',3,y-3)}[100,300,500,1000,2000,3400,5000,8000].forEach(f=>{if(f>ctx.sampleRate/2)return;let x=xFreq(f,w,log);sc.strokeStyle='#263b53';sc.beginPath();sc.moveTo(x,0);sc.lineTo(x,h);sc.stroke();sc.fillStyle='#b1c4d8';sc.fillText(f>=1000?(f/1000)+'k':f+'Hz',Math.min(x+2,w-40),h-4)});sc.beginPath();let started=false;for(let i=0;i<fd.length;i++){let f=i*ctx.sampleRate/analyser.fftSize;if(f<60)continue;let x=xFreq(f,w,log),y=dbY(fd[i],h);if(!started){sc.moveTo(x,y);started=true}else sc.lineTo(x,y)}sc.strokeStyle='#51c7f4';sc.lineWidth=2*d;sc.stroke();sc.setLineDash([5,4]);sc.strokeStyle='#46d9b0';[x1,x2].forEach(x=>{sc.beginPath();sc.moveTo(x,0);sc.lineTo(x,h);sc.stroke()});sc.setLineDash([]);setBand('bass',band(80,250));setBand('body',band(250,800));setBand('pres',band(800,3400));setBand('bright',band(3400,8000));let ww=wf.width,hh=wf.height;wc.drawImage(wf,0,0,ww,hh-2,0,2,ww,hh-2);let row=wc.createImageData(ww,2);for(let x=0;x<ww;x++){let f=log?60*Math.pow((ctx.sampleRate/2)/60,x/ww):x/ww*(ctx.sampleRate/2),idx=Math.max(0,Math.min(fd.length-1,Math.floor(f/(ctx.sampleRate/2)*fd.length))),v=Math.max(0,Math.min(1,(fd[idx]+90)/75));for(let y=0;y<2;y++){let p=(y*ww+x)*4;row.data[p]=v*255;row.data[p+1]=Math.max(0,v-.2)*255;row.data[p+2]=(1-v)*150+35;row.data[p+3]=255}}wc.putImageData(row,0,hh-2);raf=requestAnimationFrame(draw)}
+$('start').onclick=async()=>{try{$('status').textContent='Requesting microphone permission…';stream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:false,noiseSuppression:false,autoGainControl:false}});ctx=new (window.AudioContext||window.webkitAudioContext)();await ctx.resume();analyser=ctx.createAnalyser();analyser.fftSize=4096;analyser.smoothingTimeConstant=.55;fd=new Float32Array(analyser.frequencyBinCount);td=new Float32Array(analyser.fftSize);src=ctx.createMediaStreamSource(stream);src.connect(analyser);[spec,wf,pm].forEach(fit);active=true;$('start').disabled=true;$('stop').disabled=false;$('status').textContent='LIVE — microphone listening';draw()}catch(e){$('status').textContent='Microphone error: '+e.message+' — use HTTPS and allow microphone access.'}};
+$('stop').onclick=()=>{active=false;if(raf)cancelAnimationFrame(raf);if(stream)stream.getTracks().forEach(t=>t.stop());if(ctx)ctx.close();$('start').disabled=false;$('stop').disabled=true;$('status').textContent='Stopped.'};window.addEventListener('resize',()=>{if(active)[spec,wf,pm].forEach(fit)});
+</script></body></html>
